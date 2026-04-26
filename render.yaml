@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: omniagent-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+
+  - type: web
+    name: omniagent-frontend
+    env: docker
+    dockerfilePath: ./Dockerfile.frontend
