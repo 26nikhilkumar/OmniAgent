@@ -14,26 +14,27 @@ class TaskRequest(BaseModel):
     user_goal: str
 
 
-def _run(user_goal: str, thread_id: str) -> dict:
-    state = agent_graph.invoke({"user_goal": user_goal}, thread_id=thread_id)
+def _run(user_goal: str) -> dict:
+    state = agent_graph.invoke({"user_goal": user_goal})
     metrics = evaluate_response(
         query=user_goal,
         context=state.get("retrieved_context", []),
         answer=state.get("final_report", ""),
     )
-    return {"result": state, "metrics": metrics, "thread_id": thread_id}
+    return {"result": state, "metrics": metrics}
 
 
 @router.post("/run")
 def run_task(payload: TaskRequest) -> dict:
-    return _run(payload.user_goal, thread_id=str(uuid4()))
+    return _run(payload.user_goal)
 
 
 @router.post("/submit")
 def submit_task(payload: TaskRequest) -> dict:
     task_id = str(uuid4())
-    _TASKS[task_id] = {"status": "running", "logs": ["task received", "planning", "executing"]}
-    _TASKS[task_id] = {"status": "completed", **_run(payload.user_goal, thread_id=task_id), "logs": ["completed"]}
+    _TASKS[task_id] = {"status": "running"}
+    # Local synchronous fallback in this starter implementation.
+    _TASKS[task_id] = {"status": "completed", **_run(payload.user_goal)}
     return {"task_id": task_id, "status": _TASKS[task_id]["status"]}
 
 

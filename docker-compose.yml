@@ -4,14 +4,6 @@ services:
     ports:
       - "6379:6379"
 
-  neo4j:
-    image: neo4j:5
-    environment:
-      - NEO4J_AUTH=neo4j/neo4jpassword
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-
   backend:
     build:
       context: .
@@ -22,7 +14,6 @@ services:
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - redis
-      - neo4j
 
   worker:
     build:

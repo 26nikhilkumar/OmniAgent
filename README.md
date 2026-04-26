@@ -1,58 +1,63 @@
 # OmniAgent
 
-OmniAgent is an end-to-end **production-style AI agent system template** that includes LangGraph orchestration, hybrid retrieval, GraphRAG, API + UI surfaces, async worker wiring, observability hooks, deployment config, and CI.
-
-## Why this project is different
-- ✅ Real **LangGraph** state machine with conditional routing and checkpointing.
-- ✅ **Hybrid retrieval** path with dense + sparse scoring and optional cross-encoder reranking.
-- ✅ **Neo4j GraphRAG** backend for entity graph traversal.
-- ✅ **MCP-style tool interfaces** with discoverable/callable server methods.
-- ✅ **Observability hooks** (quality evaluator + tracing + Prometheus metrics endpoint).
-
-## Architecture
-
-```mermaid
-flowchart TD
-    UI[Streamlit UI] --> API[FastAPI]
-    API --> CELERY[Celery Worker]
-    API --> LG[LangGraph Orchestrator]
-    LG --> RAG[Hybrid Retriever]
-    LG --> GRAPH[Neo4j GraphRAG]
-    LG --> MCP[MCP Server/Tools]
-    API --> METRICS[/metrics + /metrics/rag]
-```
+OmniAgent is an end-to-end **production-style AI agent system template** that includes orchestration, retrieval, API + UI surfaces, async worker wiring, observability hooks, deployment config, and CI.
 
 ## Delivered components
 
 ### Agent core
 - Multi-agent orchestration pipeline: planner → researcher → analyst → writer → scheduler.
-- Shared typed runtime state and conditional routing.
-- LangGraph `StateGraph` with memory checkpointer.
+- Shared typed runtime state and deterministic plan execution.
+- MCP-style tool abstraction (`MCPClient`) and local MCP server stub (`OmniMCPServer`).
 
-### Retrieval stack
-- Document loading and chunking.
-- Hybrid retrieval (`BM25 + dense embeddings`) with fallback mode.
-- Optional cross-encoder reranking.
-- Neo4j-backed GraphRAG entity relationships.
+### RAG stack
+- Document loading and chunking utilities.
+- Hybrid retrieval utility (BM25 + overlap scoring).
+- Lightweight GraphRAG utility via co-occurrence graph.
+- In-memory vector store fallback abstraction.
 
-### Backend + observability
+### Backend + async
 - FastAPI routes:
   - `GET /health`
   - `POST /tasks/run`
   - `POST /tasks/submit`
   - `GET /tasks/{task_id}`
   - `GET /metrics/rag`
-  - `GET /metrics` (Prometheus format)
+- Celery + Redis wiring for worker execution path.
 - Evaluation metrics for faithfulness/context relevance.
-- Tracing helper for span timings.
+- Simple tracing helper for timing spans.
 
-### Frontend + ops
-- Streamlit dashboard for task submission and result inspection.
-- Dockerfiles + Docker Compose stack (redis + neo4j + backend + worker + frontend).
-- Render deployment manifest.
+### Frontend
+- Streamlit dashboard for task submission, report rendering, metrics, and tool results.
+
+### MLOps / project operations
+- Fine-tuning dataset scaffolding and JSONL export helper.
+- Adapter merge placeholder script.
+- Dockerfiles + Docker Compose stack.
+- Render deployment manifest (`render.yaml`).
 - GitHub Actions CI workflow.
+- Makefile commands for run/test/ingest/evaluate/fine-tune export.
 
 ---
+
+## Repository structure
+
+```text
+backend/
+  api/routes/
+  core/
+  rag/
+  observability/
+  workers/
+  finetuning/
+frontend/
+scripts/
+docs/
+.github/workflows/ci.yml
+Dockerfile
+Dockerfile.frontend
+docker-compose.yml
+render.yaml
+```
 
 ## Run locally
 
@@ -84,14 +89,10 @@ make evaluate
 make export-finetune
 ```
 
-## Performance (placeholder baseline)
+## Example request
 
-| Metric | Current |
-|---|---:|
-| Recall@5 | 0.00 |
-| Faithfulness | 0.00 |
-| Latency | 0 ms |
-
-## Testimonial (placeholder)
-
-> "OmniAgent helped me automate recurring research workflows." — _Future user testimonial_
+```bash
+curl -X POST http://localhost:8000/tasks/run \
+  -H "Content-Type: application/json" \
+  -d '{"user_goal":"Research RAG 2.0 and remind me in two weeks"}'
+```
